@@ -1,0 +1,5 @@
+﻿  Lab1Lin.cpp
+  Main.cpp
+C:\Users\maksi\source\repos\OpenMP\OpenMP\Main.cpp(12,12): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+  Создание кода...
+  OpenMP.vcxproj -> C:\Users\maksi\source\repos\OpenMP\Debug\OpenMP.exe

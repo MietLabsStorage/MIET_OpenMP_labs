@@ -6,7 +6,8 @@
 
 using namespace std;
 
-const long long N = 1000000;
+//number of elements
+const long long N = 50000000;
 
 int main()
 {
@@ -16,14 +17,18 @@ int main()
 	int* B = new int[N];
 	int* C = new int[N];
 
+	//pack arrays
 	for (int k = 0; k < N; k++)
 	{
-		A[k] = rand() % 10;
-		B[k] = rand() % 10;
-		C[k] = rand() % 9 + 1;
+		A[k] = rand() % 2 + 1;
+		B[k] = rand() % 2 + 1;
+		C[k] = rand() % 2 + 1;
 	}
+	cout << "Max num procs: " << omp_get_num_procs() << endl;
+	cout << "Number of elements: " << N << endl << endl;
 
-	long long multiply = 1;
+	//Reduction code
+	double multiply = 1;
 	double start, end;
 	start = omp_get_wtime();
 #pragma omp parallel for reduction(*: multiply)
@@ -37,8 +42,10 @@ int main()
 	}
 	end = omp_get_wtime();
 	cout << "Parallel reduct: " << (end - start) << "   Result :" << multiply << endl;
+	//end of reduction code
 
 
+	//Atomic code
 	multiply = 1;
 	start = omp_get_wtime();
 #pragma omp parallel for
@@ -53,7 +60,10 @@ int main()
 	}
 	end = omp_get_wtime();
 	cout << "Parallel atomic: " << (end - start) << "   Result :" << multiply << endl;
+	//end of atomic code
 
+
+	//Critical section code
 	multiply = 1;
 	start = omp_get_wtime();
 #pragma omp parallel for
@@ -65,19 +75,15 @@ int main()
 #pragma omp critical (name)
 			{
 				multiply *= tempMult;
-				multiply += 1;
 			}
-#pragma omp critical (name)
-			{
-				multiply *= tempMult;
-				multiply -= 1;
-			}
-
 		}
 	}
 	end = omp_get_wtime();
-	cout << "Parallel section: " << (end - start) << "   Result :" << multiply << endl;
+	cout << "Parallel critical section: " << (end - start) << "   Result :" << multiply << endl;
+	//end of critical section code
 
+
+	//Linear code
 	multiply = 1;
 	start = omp_get_wtime();
 	for (int i = 0; i < N; i++)
@@ -90,7 +96,205 @@ int main()
 	}
 	end = omp_get_wtime();
 	cout << "Linear: " << (end - start) << "   Result :" << multiply << endl;
+	//end of linear code
 
+
+	//Section (2 section) code 
+	multiply = 1;
+	start = omp_get_wtime();
+#pragma omp parallel sections reduction(*:multiply) 
+	{
+#pragma omp section
+		for (int i = 0; i < N/2; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N/2; i < N; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+	}
+	end = omp_get_wtime();
+	cout << "2 sections: " << (end - start) << "   Result :" << multiply << endl;
+	//end of 2 sections code
+
+
+
+	//Section (3 section) code 
+	multiply = 1;
+	start = omp_get_wtime();
+#pragma omp parallel sections reduction(*:multiply) 
+	{
+#pragma omp section
+		for (int i = 0; i < N / 3; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 3; i < N / 3*2; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 3 * 2; i < N; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+	}
+	end = omp_get_wtime();
+	cout << "3 sections: " << (end - start) << "   Result :" << multiply << endl;
+	//end of 3 sections code
+
+
+	//Section (4 section) code 
+	multiply = 1;
+	start = omp_get_wtime();
+#pragma omp parallel sections reduction(*:multiply) 
+	{
+#pragma omp section
+		for (int i = 0; i < N / 4; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 4; i < N / 4 * 2; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 4 * 2; i < N/4*3; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 4 * 3; i < N; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+	}
+	end = omp_get_wtime();
+	cout << "4 sections: " << (end - start) << "   Result :" << multiply << endl;
+	//end of 4 sections code
+
+
+	//Section (8 section) code 
+	multiply = 1;
+	start = omp_get_wtime();
+#pragma omp parallel sections reduction(*:multiply) 
+	{
+#pragma omp section
+		for (int i = 0; i < N / 8; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8; i < N / 8 * 2; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 2; i < N / 8 * 3; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 3; i < N/8*4; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 4; i < N / 8 * 5; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 5; i < N / 8 * 6; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 6; i < N / 8 * 7; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+#pragma omp section
+		for (int i = N / 8 * 7; i < N ; i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				multiply *= tempMult;
+			}
+		}
+	}
+	end = omp_get_wtime();
+	cout << "8 sections: " << (end - start) << "   Result :" << multiply << endl;
+	//end of 8 sections code
 
 	return 0;
 }

@@ -1,0 +1,5 @@
+﻿  Lab3.cpp
+C:\Users\maksi\Desktop\OMP\OpenMP\Lab3\Lab3\Lab3.cpp(13,12): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+  Matrix.cpp
+  Создание кода...
+  Lab3.vcxproj -> C:\Users\maksi\Desktop\OMP\OpenMP\Lab3\Debug\Lab3.exe

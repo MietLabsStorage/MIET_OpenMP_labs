@@ -7,6 +7,7 @@
 using namespace std;
 
 //number of elements
+//const long long N = 20;
 const long long N = 50000000;
 
 int main()
@@ -105,7 +106,7 @@ int main()
 #pragma omp parallel sections reduction(*:multiply) 
 	{
 #pragma omp section
-		for (int i = 0; i < N/2; i++)
+		for (int i = 0; i < N / 2; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -114,7 +115,7 @@ int main()
 			}
 		}
 #pragma omp section
-		for (int i = N/2; i < N; i++)
+		for (int i = N / 2; i < N; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -144,7 +145,7 @@ int main()
 			}
 		}
 #pragma omp section
-		for (int i = N / 3; i < N / 3*2; i++)
+		for (int i = N / 3; i < N / 3 * 2; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -191,7 +192,7 @@ int main()
 			}
 		}
 #pragma omp section
-		for (int i = N / 4 * 2; i < N/4*3; i++)
+		for (int i = N / 4 * 2; i < N / 4 * 3; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -247,7 +248,7 @@ int main()
 			}
 		}
 #pragma omp section
-		for (int i = N / 8 * 3; i < N/8*4; i++)
+		for (int i = N / 8 * 3; i < N / 8 * 4; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -283,7 +284,7 @@ int main()
 			}
 		}
 #pragma omp section
-		for (int i = N / 8 * 7; i < N ; i++)
+		for (int i = N / 8 * 7; i < N; i++)
 		{
 			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
 			if (tempMult)
@@ -296,5 +297,60 @@ int main()
 	cout << "8 sections: " << (end - start) << "   Result :" << multiply << endl;
 	//end of 8 sections code
 
+	//Semaphore code
+	omp_lock_t lock;
+	omp_init_lock(&lock);
+	multiply = 1;
+	start = omp_get_wtime();
+#pragma omp parallel for
+	for (int i = 0; i < N; i++)
+	{
+		int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+		if (tempMult)
+		{
+			omp_set_lock(&lock);
+			multiply *= tempMult;
+			omp_unset_lock(&lock);
+		}
+	}
+	end = omp_get_wtime();
+	omp_destroy_lock(&lock);
+	cout << "Semaphore: " << (end - start) << "   Result :" << multiply << endl;
+	//end of semaphore code
+
+
+	//Barrier code
+	multiply = 1;
+	double* beforeBarrierMultiply = new double[omp_get_max_threads()];
+	for (int i = 0; i < omp_get_max_threads(); i++) {
+		beforeBarrierMultiply[i] = 1;
+	}
+	start = omp_get_wtime();
+#pragma omp parallel
+	{
+		int num = omp_get_thread_num();
+		for (int i = (num)*N / omp_get_num_threads(); i < (num + 1) * N / omp_get_num_threads(); i++)
+		{
+			int tempMult = A[i] % 2 == 0 ? B[i] / C[i] : B[i] + C[i];
+			if (tempMult)
+			{
+				beforeBarrierMultiply[num] *= tempMult;
+			}
+		}
+#pragma omp barrier
+
+#pragma omp master
+		{
+			for (int i = 0; i < omp_get_num_threads(); i++) {
+				multiply *= beforeBarrierMultiply[i];
+			}
+		}
+	}
+	end = omp_get_wtime();
+
+	cout << "Barrier: " << (end - start) << "   Result :" << multiply << endl;
+	//end of barrier code
+
 	return 0;
+
 }
